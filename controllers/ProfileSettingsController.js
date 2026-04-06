@@ -1,4 +1,4 @@
-import {supabaseAsosCustomer} from '../utils/supabaseClients.js'
+import {supabaseAsosCustomer, supabaseAsosCustomerServiceRole} from '../utils/supabaseClients.js'
 
 
 export const userProfile = async (req, res) => {
@@ -105,5 +105,94 @@ export const getUserProfile = async (req, res) => {
   } catch (err) {
     console.error("Error fetching profile:", err);
     return res.status(500).json({ error: "Server error" });
+  }
+};
+
+
+
+// Mobile users: account deletion
+// let's confirm their identity by asking for their email and password and return user exists or not before we proceed with deletion. This is a security measure to prevent accidental deletions and ensure that the user requesting deletion is indeed the account owner.
+export const deleteUserAccount = async (req, res) => {
+  try {
+    
+    // 1. VERIFY USER TOKEN (JWT)
+    
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'Missing or invalid token' });
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    const {
+      data: { user: tokenUser },
+      error: tokenError,
+    } = await supabaseAsosCustomer.auth.getUser(token);
+
+    if (tokenError || !tokenUser) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+  
+    // 2. VALIDATE INPUT
+ 
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        error: 'Email and password are required',
+      });
+    }
+
+  
+    // 3. RE-AUTHENTICATE USER
+ 
+    const {
+      data: authData,
+      error: authError,
+    } = await supabaseAsosCustomer.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError || !authData?.user) {
+      return res.status(401).json({
+        error: 'Invalid email or password',
+      });
+    }
+
+    // Ensure same user (VERY IMPORTANT)
+    if (authData.user.id !== tokenUser.id) {
+      return res.status(403).json({
+        error: 'User mismatch',
+      });
+    }
+
+
+    // 4. DELETE USER (ADMIN ACTION)
+  
+    const { error: deleteError } =
+      await supabaseAsosCustomerServiceRole.auth.admin.deleteUser(tokenUser.id);
+
+    if (deleteError) {
+      console.error('Delete error:', deleteError);
+      return res.status(500).json({
+        error: 'Failed to delete account',
+      });
+    }
+
+
+    // 5. SUCCESS RESPONSE
+
+    return res.status(200).json({
+      message: 'Account deleted successfully',
+    });
+
+  } catch (err) {
+    console.error('Server error:', err);
+    return res.status(500).json({
+      error: 'Internal server error',
+    });
   }
 };

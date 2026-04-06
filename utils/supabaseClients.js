@@ -20,8 +20,13 @@ const supabaseAsosCustomer = createClient(
   process.env.CUSTOMER_SUPABASE_ANON_KEY    
 );
 
+const supabaseAsosCustomerServiceRole = createClient(
+  process.env.CUSTOMER_SUPABASE_URL,
+  process.env.CUSTOMER_SUPABASE_SERVICE_ROLE_KEY    
+);
 
 
 
 
-export { supabaseAsosAdmin, supabaseAsosCustomer, supabaseAsos };
+
+export { supabaseAsosAdmin, supabaseAsosCustomer, supabaseAsos, supabaseAsosCustomerServiceRole };
