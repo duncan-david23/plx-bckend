@@ -5,6 +5,7 @@ import profileSettingsRoute from './routes/profileSettingsRoute.js';
 import AddressRoute from './routes/AddressRoute.js';
 import OrdersRoute from './routes/OrdersRoute.js';
 import productRoute from './routes/productRoute.js';
+import VendorRoute from './routes/VendorRoute.js';
 // import messageRoute from './routes/messageRoute.js';
 
 
@@ -22,6 +23,7 @@ app.use('/api/users', profileSettingsRoute);
 app.use('/api/users', AddressRoute);
 app.use('/api/users', OrdersRoute);
 app.use('/api/users', productRoute);
+app.use('/api/users', VendorRoute);
 // app.use('/api/users', messageRoute);
 
 
