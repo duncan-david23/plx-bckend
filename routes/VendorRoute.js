@@ -1,5 +1,5 @@
 import express from "express";
-import {  getVendorProfile, updateVendorProfile, addVendorProduct, getVendorProducts, uploadMiddleware, deleteVendorProduct, getAllVendorProducts } from "../controllers/VendorController.js";
+import {  getVendorProfile, updateVendorProfile, addVendorProduct, getVendorProducts, uploadMiddleware, deleteVendorProduct, getAllVendorProducts, updateProductFeaturedStatus } from "../controllers/VendorController.js";
 
 const router = express.Router();
 
@@ -13,5 +13,8 @@ router.post('/add-vendor-product', uploadMiddleware, addVendorProduct);
 router.delete('/delete-vendor-product/:product_id', deleteVendorProduct);
 
 router.get('/all-vendor-products', getAllVendorProducts);
+router.put('/vendor/update-product-featured/:product_id', updateProductFeaturedStatus);
+
+
 
 export default router;

@@ -434,3 +434,84 @@ export const getAllVendorProducts = async (req, res) => {
     return res.status(500).json({ error: "Server error" });
   }
 };
+
+
+
+// update the featured status of a product
+export const updateProductFeaturedStatus = async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({ error: "Missing authorization header" });
+    }
+
+    const token = authHeader.replace("Bearer ", "").trim();
+
+    // Validate user
+    const {
+      data: { user },
+      error: authError,
+    } = await supabaseAsosCustomer.auth.getUser(token);
+
+    if (authError || !user) {
+      return res.status(401).json({ error: "Invalid or expired token" });
+    }
+
+    const { product_id } = req.params;
+    const { featured } = req.body;
+
+    if (typeof featured !== 'boolean') {
+      return res.status(400).json({ error: "Featured status must be a boolean" });
+    }
+
+    // Check if product belongs to user
+    const { data: existingProduct, error: checkError } = await supabaseAsosCustomerServiceRole
+      .from("vendor_products")
+      .select("id, featured, featured_expires_at")
+      .eq("id", product_id)
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (checkError || !existingProduct) {
+      return res.status(404).json({ error: "Product not found or unauthorized" });
+    }
+
+    // Prepare update data
+    const updateData = {
+      featured,
+      updated_at: new Date().toISOString()
+    };
+
+    // If setting to featured (true), set expiration to 7 days from now
+    if (featured === true) {
+      const expiresAt = new Date();
+      expiresAt.setDate(expiresAt.getDate() + 7);
+      updateData.featured_expires_at = expiresAt.toISOString();
+    } else {
+      // If removing from featured, clear the expiration
+      updateData.featured_expires_at = null;
+    }
+
+    // Update featured status for this specific product
+    const { data, error } = await supabaseAsosCustomerServiceRole
+      .from("vendor_products")
+      .update(updateData)
+      .eq("id", product_id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Supabase update error:", error);
+      return res.status(400).json({ error: error.message });
+    }
+
+    return res.status(200).json({
+      message: featured ? "Product featured for 7 days" : "Product removed from featured",
+      product: data,
+    });
+  } catch (err) {
+    console.error("Update product featured status error:", err);
+    return res.status(500).json({ error: "Server error" });
+  }
+};
+
